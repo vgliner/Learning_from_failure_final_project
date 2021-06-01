@@ -1,0 +1,94 @@
+﻿Disease,Trues,Falses
+Sinus rhythm,56078,23158
+Normal ECG,24530,54706
+Sinus tachycardia,10190,69046
+Left atrial enlargement,10099,69137
+ST changes - Nonspecific T-wave abnormality,8348,70888
+Left ventricular hypertrophy,8069,71167
+Sinus bradycardia,7213,72023
+Sinus arrhythmia,5292,73944
+STEMI - Anteroseptal,4900,74336
+Left-axis deviation,4562,74674
+STEMI - Anterior,4535,74701
+ST changes - Nonspecific ST deviation,4511,74725
+ST changes - Nonspecific ST deviation with T-wave change,4495,74741
+Bundle-branch block - RBBB - incomplete,3806,75430
+STEMI - Inferior or Inferolateral,3415,75821
+Normal variant,3118,76118
+Atrial fibrillation,3055,76181
+Ventricular premature complex(es) - VPB - VPC,3001,76235
+QT Interval - Prolonged,2865,76371
+Bundle Branch Block - Right - RBBB,2689,76547
+Ischemia - location unspecified,2617,76619
+Ischemia,2440,76796
+Low voltage,2377,76859
+PR Interval - Prolonged,2317,76919
+Atrial premature complex(es) - APC APB,2083,77153
+Left anterior fascicular block,1939,77297
+Right-axis deviation,1773,77463
+STEMI - Lateral,1281,77955
+Intraventricular conduction delay,1147,78089
+ST-T change due to ventricular hypertrophy,1096,78140
+Early repolarization,1093,78143
+PR Interval - Short,1002,78234
+Right atrial enlargement,960,78276
+Bundle Branch Block - Left - LBBB,828,78408
+Abnormal precordial R-wave progression,809,78427
+Aberrant conduction of supraventricular beat(s),726,78510
+Pacing - Ventricular-paced complex(es) or rhythm,632,78604
+Atrial flutter,603,78633
+Pacing - Atrial-sensed ventricular-paced complex(es) or rhythm,521,78715
+Digitalis effect,400,78836
+AV Block,396,78840
+Extremity electrode reversal,382,78854
+Acute pericarditis,371,78865
+Fusion complex(es),348,78888
+ varying conduction,329,78907
+Pulmonary disease,295,78941
+ unifocal,277,78959
+Pacing - AV dual-paced complex(es) or rhythm,269,78967
+Pacing - Atrial-paced complex(es) or rhythm,258,78978
+Right ventricular hypertrophy,244,78992
+Abnormal P-wave axis,195,79041
+Ectopic atrial rhythm,182,79054
+Right superior axis,172,79064
+Supraventricular tachycardia,158,79078
+Pacing Ventricular pacing of nonג€“right ventricular apical origin,145,79091
+Left posterior fascicular block,126,79110
+Sinoatrial block,119,79117
+ type I,119,79117
+ ventricular,104,79132
+Ectopic atrial tachycardia,97,79139
+Pacing - Failure to pace,91,79145
+STEMI - Posterior,88,79148
+STEMI - Right Ventricular,87,79149
+Junctional escape complex(es),82,79154
+AV Block - Second-degree,61,79175
+Indeterminate axis,58,79178
+ Mobitz type I (Wenckebach),52,79184
+Wolff-Parkinson-White,43,79193
+ complete (third-degree),39,79197
+Ventricular tachycardia,29,79207
+ advanced (high-grade),28,79208
+Wide-QRS tachycardia,26,79210
+Junctional tachycardia,20,79216
+Retrograde atrial activation,20,79216
+Brugada abnormality,15,79221
+Pacing - Failure to inhibit,14,79222
+Ventricular escape complex(es),11,79225
+Hyperkalemia,10,79226
+Prominent U waves,10,79226
+Ventricular preexcitation,9,79227
+ Mobitz type II,9,79227
+Pacing - Failure to capture,8,79228
+Sinus pause or arrest,6,79230
+ atrial,6,79230
+Wandering atrial pacemaker,3,79233
+ unsustained,3,79233
+Electrical alternans,3,79233
+ multifocal,2,79234
+QT interval - Short,2,79234
+Hypokalemia or drug effect,1,79235
+Biventricular hypertrophy,1,79235
+TU fusion,1,79235
+ polymorphous,1,79235
