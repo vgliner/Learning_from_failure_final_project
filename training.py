@@ -101,7 +101,10 @@ class Trainer(abc.ABC):
         self.multiple_heads = multiple_heads
         self.current_epoch = 0
         self.num_of_epochs = num_of_epochs
-        self.grl_lambda =model.grl_lambda
+        try:
+            self.grl_lambda =model.grl_lambda
+        except:
+            self.grl_lambda = 1
         self.epoch_to_start_disturbing=epoch_to_start_disturbing
         self.num_of_epochs_without_improvement = 0
         self.former_acc = 0.0
@@ -160,7 +163,10 @@ class Trainer(abc.ABC):
                 except:
                     print('Didnt find saved full model')
                 self.model.load_state_dict(saved_state['model_state'])
-
+        checkpoints_name_parsed = re.split(r'\\|/',checkpoints)
+        with open(f"Execution_dump_kernel_{checkpoints_name_parsed[-1][:-3]}.txt", "a") as myfile:
+            myfile.write(f'EPOCH \t TR_ACC \t TE_ACC \t TR_LOSS \t TE_LOSS_t \t IS_BEST\n')
+            
         for epoch in range(num_epochs):
             gc.collect()    
             save_checkpoint = False
@@ -184,8 +190,12 @@ class Trainer(abc.ABC):
             te_acc=round(acc,2)
             te_loss=loss[-1]       
             test_loss += loss
-            ROC_area_under_curve = self.ROC_AUC(out,y)
-            ROC_AUCs.append(ROC_AUC_)
+            # out1 = np.array([sub.detach().cpu().numpy() for sub in out ])  #for j in sub
+            # y = np.array([sub.cpu().detach().numpy() for sub in y]) # for j in sub
+            # out = out.astype('float64')
+            # y = y.astype('float64')
+            # ROC_area_under_curve = self.ROC_AUC(out,y)
+            # ROC_AUCs.append(ROC_AUC_)
             # Adding additional printout 
             if verbose:
                 precision = 0
@@ -194,20 +204,19 @@ class Trainer(abc.ABC):
                     precision = round(TP.item()/ (TP.item()+FP.item()),2)
                 if (TP.item()+FN.item())>0:
                     recall = round(TP.item()/(TP.item()+FN.item()),2)
-                print(f'ACC: {acc}, PRECISION: {precision}, RECALL: {recall}, ROC AUC: {ROC_AUC_} COMBINED: {(precision+recall)/2}')
+                print(f'ACC: {acc}, PRECISION: {precision}, RECALL: {recall} COMBINED: {(precision+recall)/2}')
             try:
-                if self.optim_by_acc:
-                    is_best=(te_acc > best_acc)
-                else:
-                    is_best=(ROC_area_under_curve > best_ROC_AUC)
+                # if self.optim_by_acc:
+                is_best=(te_acc > best_acc)
+                # else:
+                #     is_best=(ROC_area_under_curve > best_ROC_AUC)
             except:
                 is_best=False
-            checkpoints_name_parsed = re.split(r'\\|/',checkpoints)
             with open(f"Execution_dump_kernel_{checkpoints_name_parsed[-1][:-3]}.txt", "a") as myfile:
                 myfile.write(f'{actual_num_epochs} \t {tr_acc} \t {te_acc} \t {tr_loss} \t {te_loss} \t {is_best} \n')
             if True:   #is_best
                 with open(f"Results_raw_dump_kernel_{checkpoints_name_parsed[-1][:-3]}.txt", "a") as myfile:
-                    myfile.write(f'{actual_num_epochs} \t {te_acc} \t {te_loss} \t {is_best} \t {TP.item()} \t {TN.item()} \t {FP.item()} \t {FN.item()} \t {ROC_AUC_}\n')
+                    myfile.write(f'{actual_num_epochs} \t {te_acc} \t {te_loss} \t {is_best} \t {TP.item()} \t {TN.item()} \t {FP.item()} \t {FN.item()} \n') #{ROC_AUC_}\n
             actual_num_epochs += 1
 
             if checkpoints:
@@ -217,10 +226,10 @@ class Trainer(abc.ABC):
                     best_acc = acc
                     if self.optim_by_acc:
                         save_checkpoint = True
-                if not best_ROC_AUC:
-                    best_ROC_AUC = ROC_area_under_curve
-                if ROC_area_under_curve > best_ROC_AUC:
-                    best_ROC_AUC = ROC_area_under_curve
+                # if not best_ROC_AUC:
+                #     best_ROC_AUC = ROC_area_under_curve
+                # if ROC_area_under_curve > best_ROC_AUC:
+                #     best_ROC_AUC = ROC_area_under_curve
                     if self.optim_by_acc == False:
                         save_checkpoint = True
             if test_acc:
@@ -230,10 +239,11 @@ class Trainer(abc.ABC):
                     else:
                         epochs_without_improvement = 0
                 else:
-                    if ROC_area_under_curve <= ROC_AUCs[-1]:
-                        epochs_without_improvement += 1
-                    else:
-                        epochs_without_improvement = 0                    
+                    # if ROC_area_under_curve <= ROC_AUCs[-1]:
+                    #     epochs_without_improvement += 1
+                    # else:
+                    #     epochs_without_improvement = 0          
+                    pass          
 
             test_acc.append(acc)
 
@@ -244,12 +254,11 @@ class Trainer(abc.ABC):
             # Save model checkpoint if requested
             if save_checkpoint and checkpoint_filename is not None:
                 sample_dims = np.shape(dl_train.dataset[0][0])
-                accuracy_threshold,F1_threshold = Find_optimal_threshold(out,y)
+                # accuracy_threshold,F1_threshold = Find_optimal_threshold(out,y)
                 saved_state = dict(best_acc=best_acc,
                                    ewi=epochs_without_improvement,
                                    model_state=self.model.state_dict(),
                                    full_model= self.model, best_ROC_AUC=best_ROC_AUC,
-                                   accuracy_threshold=accuracy_threshold,F1_threshold=F1_threshold,
                                    sample_dims=sample_dims)
                 dir_path = os.path.dirname(os.path.realpath(__file__))
                 complete_path= os.path.join(dir_path,checkpoint_filename)
