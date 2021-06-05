@@ -324,7 +324,7 @@ class Ecg12ImageNet(nn.Module):
     def forward(self, x):
         out = self.cnn(x)
         out = out.reshape((x.shape[0], -1))
-        return self.fc(out)
+        return nn.Sigmoid(self.fc(out))
 
     def num_flat_features(self, x):
         size = x.size()[1:]  # all dimensions except the batch dimension

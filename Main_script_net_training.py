@@ -170,7 +170,8 @@ def RunNet_NY_ClassBinary(classification_category='Left atrial enlargement', dro
     lr = 0.0001
     checkpoint_filename = f'{checkpoints_name}.pt'
     complete_path= os.path.join('checkpoints', checkpoint_filename)    
-    loss_fn = nn.BCEWithLogitsLoss() #  With weights for different classes, pos_weight>1 Increases the precision, < 1 the recall
+    # loss_fn = nn.BCEWithLogitsLoss() #  With weights for different classes, pos_weight>1 Increases the precision, < 1 the recall
+    loss_fn = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     trainer = Ecg12LeadImageNetTrainerBinary(model, loss_fn, optimizer, device,optim_by_acc = False)
     fitResult = trainer.fit(dl_train, dl_test, num_epochs, checkpoints=complete_path,
