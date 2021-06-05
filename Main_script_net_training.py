@@ -19,6 +19,7 @@ import time
 import configparser
 import psutil
 import socket
+import loss_custom
 # from ray import tune
 # from ray.tune import CLIReporter
 # from ray.tune.schedulers import ASHAScheduler
@@ -106,9 +107,9 @@ def RunNet_NY_ClassBinary(classification_category='Left atrial enlargement', dro
     ds = NY_database_dataloader.NY_Dataset(classification_category=classification_category,to_cut_image = True, \
         use_stored_data = False, stored_data_last_entries = 30)
     # for real training:
-    num_train = int(len(ds)*0.82)  # 0.8
-    num_val = int(len(ds)*0.05)
-    num_test = int((len(ds) - num_train - num_val-1 )*1.0)
+    num_train = int(len(ds)*0.042)  # 0.8
+    num_val = int(len(ds)*0.005)
+    num_test = int((len(ds) - num_train - num_val-1 )*0.01)
     print(f'Using {num_train} entries for training, {num_val} for validation and {num_test} for test')
 
     batch_size = batch_size
@@ -167,11 +168,13 @@ def RunNet_NY_ClassBinary(classification_category='Left atrial enlargement', dro
     import torch.optim as optim
     from training import Ecg12LeadImageNetTrainerBinary
     torch.manual_seed(42)
-    lr = 0.0001
+    lr = 0.00003
     checkpoint_filename = f'{checkpoints_name}.pt'
     complete_path= os.path.join('checkpoints', checkpoint_filename)    
     # loss_fn = nn.BCEWithLogitsLoss() #  With weights for different classes, pos_weight>1 Increases the precision, < 1 the recall
     loss_fn = nn.BCELoss()
+    # loss_fn = loss_custom.GeneralizedCELoss()
+    # loss_fn = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     trainer = Ecg12LeadImageNetTrainerBinary(model, loss_fn, optimizer, device,optim_by_acc = False)
     fitResult = trainer.fit(dl_train, dl_test, num_epochs, checkpoints=complete_path,
@@ -187,7 +190,7 @@ if __name__ == "__main__":
     # """
     # ['Atrial fibrillation','Left ventricular hypertrophy','Normal variant']
     # """
-    RunNet_NY_ClassBinary(classification_category=classification_category, dropout = 0.26, batch_size = 82, label= 'Exp2_236802_')
+    RunNet_NY_ClassBinary(classification_category=classification_category, dropout = 0.26, batch_size = 82, label= 'Exp6_236802_')
     print('Finished execution')
 
 

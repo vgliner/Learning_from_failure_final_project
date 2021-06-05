@@ -21,6 +21,7 @@ import re
 import matplotlib.pyplot as plt
 from sklearn import metrics
 import time
+import torch.nn as nn
 
 
 def ROC_AUC(net_output,absolute_truth):
@@ -932,11 +933,12 @@ class Ecg12LeadImageNetTrainerBinary(Trainer): #
         loss.backward()
         self.optimizer.step()
         normalized_out = torch.sigmoid(out)
-        num_correct = torch.sum((out > 0) == (y == 1))
-        TP = torch.sum((out > 0) * (y == 1))
-        TN = torch.sum((out <= 0) * (y == 0))
-        FP = torch.sum((out > 0) * (y == 0))
-        FN = torch.sum((out <= 0) * (y == 1))
+        threshold = 0.5
+        num_correct = torch.sum((out > threshold) == (y == 1))
+        TP = torch.sum((out > threshold) * (y == 1))
+        TN = torch.sum((out <= threshold) * (y == 0))
+        FP = torch.sum((out > threshold) * (y == 0))
+        FN = torch.sum((out <= threshold) * (y == 1))
         return BatchResult(loss.item(), num_correct.item(),TP,TN,FP,FN, out, y)      
 
     def test_batch(self, batch) -> BatchResult:
@@ -948,13 +950,14 @@ class Ecg12LeadImageNetTrainerBinary(Trainer): #
         with torch.no_grad():
             out = self.model(x).flatten()
             loss = self.loss_fn(out, y)
-            num_correct = torch.sum((out > 0) == (y == 1))
+            threshold = 0.5
+            num_correct = torch.sum((out > threshold) == (y == 1))
             out_norm=torch.softmax(out,dim=-1)
             if self.classification_threshold==None:
-                TP = torch.sum((out > 0) * (y == 1))
-                TN = torch.sum((out <= 0) * (y == 0))
-                FP = torch.sum((out > 0) * (y == 0))
-                FN = torch.sum((out <= 0) * (y == 1))
+                TP = torch.sum((out > threshold) * (y == 1))
+                TN = torch.sum((out <= threshold) * (y == 0))
+                FP = torch.sum((out > threshold) * (y == 0))
+                FN = torch.sum((out <= threshold) * (y == 1))
             else:
                 TP = torch.sum((out_norm > self.classification_threshold) * (y == 1))
                 TN = torch.sum((out_norm <= self.classification_threshold) * (y == 0))

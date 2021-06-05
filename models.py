@@ -318,13 +318,13 @@ class Ecg12ImageNet(nn.Module):
             layers.append(nn.Linear(in_dim, 1))
         else:
             layers.append(nn.Linear(in_dim, num_of_classes))
-
+        layers.append(nn.Sigmoid())
         self.fc = nn.Sequential(*layers)
 
     def forward(self, x):
         out = self.cnn(x)
         out = out.reshape((x.shape[0], -1))
-        return nn.Sigmoid(self.fc(out))
+        return self.fc(out)
 
     def num_flat_features(self, x):
         size = x.size()[1:]  # all dimensions except the batch dimension
