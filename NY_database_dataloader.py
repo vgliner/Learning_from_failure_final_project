@@ -14,14 +14,16 @@ import psutil
 import urllib.request, json 
 import ssl
 import ECG_segmentation
+import torch
 
 
 class NY_Dataset(Dataset):
     # Convention   [n , height, width, color channel] 
     def __init__(self, root_dir=None,uploading_mode='HDD', classification_category='Atrial fibrillation', to_cut_image= False,
                 maximal_RAM_occupation= 92, use_stored_data = False, stored_data_last_entries = 0, bool_is_from_NY_DB_class = False,
-                to_equalize_hist= False, negative_class = False, to_use_hdf5 = False):
+                to_equalize_hist= False, negative_class = False, to_use_hdf5 = False, dual_class = False):
         super().__init__()
+        self.dual_class = dual_class
         self.to_use_hdf5 = to_use_hdf5   
         self.to_equalize_hist = to_equalize_hist
         self.all_possible_categories= []
@@ -297,16 +299,34 @@ class NY_Dataset(Dataset):
                     if isinstance(self.classification_category, list)==False:
                         classification = self.classification_category in cl
                     else:
-                        E = [i for i in self.classification_category if i in cl]
-                        if len(E)>0:
-                            classification= True
+                        if self.dual_class == False:
+                            E = [i for i in self.classification_category if i in cl]
+                            if len(E)>0:
+                                classification= True
+                            else:
+                                classification= False
                         else:
-                            classification= False
+                            classification = torch.tensor([int(self.classification_category[0] in cl),int(self.classification_category[1] in cl)])
+                            if classification[0].item()==0 and classification[1].item()==0:
+                                classification = 0
+                            elif classification[0].item()==1 and classification[1].item()==0:
+                                classification = 1
+                            elif classification[0].item()==0 and classification[1].item()==1:
+                                classification = 2                 
+                            else:
+                                classification = 3                 
                     classifications[row['id']] = classification
-                    if classification:
-                        Trues+= 1
+                    if self.dual_class == False:                    
+                        if classification:
+                            Trues+= 1
+                        else:
+                            Falses+= 1
                     else:
-                        Falses+= 1
+                        pass
+                        # if classification[0]:
+                        #     Trues+= 1
+                        # else:
+                        #     Falses+= 1                        
             print(f'Trues : {Trues}, Falses: {Falses}')
             self.stats = [Trues , Falses]
         return classifications

@@ -928,17 +928,23 @@ class Ecg12LeadImageNetTrainerBinary(Trainer): #
         x = x.to(self.device, dtype=torch.float)
         y = y.to(self.device, dtype=torch.float)
         self.optimizer.zero_grad()
-        out = self.model(x).flatten()
-        loss = self.loss_fn(out, y)
+        out = self.model(x)#.flatten()
+        loss = self.loss_fn(out, y.type(torch.long))
         loss.backward()
         self.optimizer.step()
-        normalized_out = torch.sigmoid(out)
-        threshold = 0.5
-        num_correct = torch.sum((out > threshold) == (y == 1))
-        TP = torch.sum((out > threshold) * (y == 1))
-        TN = torch.sum((out <= threshold) * (y == 0))
-        FP = torch.sum((out > threshold) * (y == 0))
-        FN = torch.sum((out <= threshold) * (y == 1))
+        # normalized_out = torch.sigmoid(out)
+        # threshold = 0.5
+        out_class = torch.argmax(out,dim=1)
+        num_correct = torch.sum(out_class == y)
+        # torch.eq(out_class,y)
+        # TP = torch.sum((out > threshold) * (y == 1))
+        # TN = torch.sum((out <= threshold) * (y == 0))
+        # FP = torch.sum((out > threshold) * (y == 0))
+        # FN = torch.sum((out <= threshold) * (y == 1))
+        TP  = torch.tensor([0])
+        TN  = torch.tensor([0])
+        FP  = torch.tensor([0])
+        FN  = torch.tensor([0])
         return BatchResult(loss.item(), num_correct.item(),TP,TN,FP,FN, out, y)      
 
     def test_batch(self, batch) -> BatchResult:
@@ -948,21 +954,27 @@ class Ecg12LeadImageNetTrainerBinary(Trainer): #
         y = y.to(self.device, dtype=torch.float)
 
         with torch.no_grad():
-            out = self.model(x).flatten()
-            loss = self.loss_fn(out, y)
-            threshold = 0.5
-            num_correct = torch.sum((out > threshold) == (y == 1))
-            out_norm=torch.softmax(out,dim=-1)
-            if self.classification_threshold==None:
-                TP = torch.sum((out > threshold) * (y == 1))
-                TN = torch.sum((out <= threshold) * (y == 0))
-                FP = torch.sum((out > threshold) * (y == 0))
-                FN = torch.sum((out <= threshold) * (y == 1))
-            else:
-                TP = torch.sum((out_norm > self.classification_threshold) * (y == 1))
-                TN = torch.sum((out_norm <= self.classification_threshold) * (y == 0))
-                FP = torch.sum((out_norm > self.classification_threshold) * (y == 0))
-                FN = torch.sum((out_norm <= self.classification_threshold) * (y == 1))                
+            out = self.model(x)#.flatten()
+            loss = self.loss_fn(out, y.type(torch.long))
+            # threshold = 0.5
+            # num_correct = torch.sum((out > threshold) == (y == 1))
+            # out_norm=torch.softmax(out,dim=-1)
+            out_class = torch.argmax(out,dim=1)
+            num_correct = torch.sum(out_class == y)            
+            # if self.classification_threshold==None:
+            #     TP = torch.sum((out > threshold) * (y == 1))
+            #     TN = torch.sum((out <= threshold) * (y == 0))
+            #     FP = torch.sum((out > threshold) * (y == 0))
+            #     FN = torch.sum((out <= threshold) * (y == 1))
+            # else:
+            #     TP = torch.sum((out_norm > self.classification_threshold) * (y == 1))
+            #     TN = torch.sum((out_norm <= self.classification_threshold) * (y == 0))
+            #     FP = torch.sum((out_norm > self.classification_threshold) * (y == 0))
+            #     FN = torch.sum((out_norm <= self.classification_threshold) * (y == 1))  
+            TP  = torch.tensor([0])
+            TN  = torch.tensor([0])
+            FP  = torch.tensor([0])
+            FN  = torch.tensor([0])                          
         return BatchResult(loss.item(), num_correct.item(),TP,TN,FP,FN, out, y)
 
 

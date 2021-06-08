@@ -81,9 +81,9 @@ def Calc_sampler(origin_dataset, subset):
     origin_dataset.set_statistics_only(False)    
     return sampler
 
-def RunNet_NY_ClassBinary(classification_category='Left atrial enlargement', dropout = 0.26, batch_size = 70, label = 'XXX'):
-    print(f'NY Database classification, looking for {classification_category}')
-    Write_to_trace_log('Starting learning process, category:',classification_category)
+def RunNet_NY_Dual_Head(classification_categories=['Left atrial enlargement','Normal variant'], dropout = 0.26, batch_size = 70, label = 'XXX'):
+    print(f'NY Database classification, looking for {classification_categories}')
+    Write_to_trace_log('Starting learning process, category:',classification_categories)
     import torch
     import torch.nn as nn
     import models
@@ -103,11 +103,11 @@ def RunNet_NY_ClassBinary(classification_category='Left atrial enlargement', dro
         device = "cuda:"+str(GPU)
     print('Using device: ', device)
     Write_to_trace_log('Device',device)
-    checkpoints_name = label+'Ecg12LeadImageNet_NY_'+classification_category.replace(" ","_")+'GPU'+str(GPU)
-    ds = NY_database_dataloader.NY_Dataset(classification_category=classification_category,to_cut_image = True, \
-        use_stored_data = False, stored_data_last_entries = 30)
+    checkpoints_name = label+'Ecg12LeadImageNet_NY_'+'GPU'+str(GPU) #+classification_category.replace(" ","_")
+    ds = NY_database_dataloader.NY_Dataset(classification_category=classification_categories,to_cut_image = True, \
+        use_stored_data = False, stored_data_last_entries = 30, dual_class=True)
     # for real training:
-    num_train = int(len(ds)*0.042)  # 0.8
+    num_train = int(len(ds)*0.80)  # 0.8
     num_val = int(len(ds)*0.005)
     num_test = int((len(ds) - num_train - num_val-1 )*0.01)
     print(f'Using {num_train} entries for training, {num_val} for validation and {num_test} for test')
@@ -123,8 +123,8 @@ def RunNet_NY_ClassBinary(classification_category='Left atrial enlargement', dro
 
     # Dataloader training
     ds_train = tf.SubsetDataset(ds, num_train)  # (train=True, transform=tf_ds)
-    sampler = Calc_sampler(ds, ds_train) 
-    dl_train = torch.utils.data.DataLoader(ds_train, batch_size, shuffle=False, num_workers=4, pin_memory=False,sampler = sampler)  # Without sampler 
+    # sampler = Calc_sampler(ds, ds_train) 
+    dl_train = torch.utils.data.DataLoader(ds_train, batch_size, shuffle=False, num_workers=4, pin_memory=False)  # Without sampler  ,sampler = sampler
     x, y = next(iter(dl_train))
     print(f'Data shape is {np.shape(x)}, labels shape is {np.shape(y)}')
     in_h = x.shape[2]
@@ -137,8 +137,8 @@ def RunNet_NY_ClassBinary(classification_category='Left atrial enlargement', dro
 
     # Test dataset & loader
     ds_test = tf.SubsetDataset(ds, num_test, offset=num_train + num_val)
-    sampler_t = Calc_sampler(ds, ds_test)    
-    dl_test = torch.utils.data.DataLoader(ds_test, batch_size, shuffle=False, num_workers=4, pin_memory=False, sampler = sampler_t)
+    # sampler_t = Calc_sampler(ds, ds_test)    
+    dl_test = torch.utils.data.DataLoader(ds_test, batch_size, shuffle=False, num_workers=4, pin_memory=False)  #, sampler = sampler_t
 
     #%% Net structure
     hidden_channels = [8, 16, 32, 64, 128, 256, 512]
@@ -158,8 +158,10 @@ def RunNet_NY_ClassBinary(classification_category='Left atrial enlargement', dro
     x_try = x.to(device, dtype=torch.float)
     y_pred = model(x_try)
     print('Output batch size is:',y_pred.shape[0], ', and number of class scores:', y_pred.shape[1], '\n')
-    num_correct = torch.sum((y_pred > 0).flatten() == (y.to(device, dtype=torch.long) == 1))
-    print(100*num_correct.item()/len(y),'% Accuracy... maybe we should consider training the model')
+    # num_correct = torch.sum((y_pred > 0).flatten() == (y.to(device, dtype=torch.long) == 1))
+    # print(100*num_correct[0].item()/len(y),'% Accuracy of item 1 an ... maybe we should consider training the model')
+    # print(f'First item accuracy is {100*num_correct[0].item()/y_pred.shape[0]} % , second is {100*num_correct[1].item()/y_pred.shape[0]} %... maybe we should consider training the model')
+    # num_correct = torch.sum((y_pred > 0)== (y.to(device, dtype=torch.long) == 1), dim=0)
     del x, y, x_try, y_pred   
 
 # %% Let's start training
@@ -172,9 +174,9 @@ def RunNet_NY_ClassBinary(classification_category='Left atrial enlargement', dro
     checkpoint_filename = f'{checkpoints_name}.pt'
     complete_path= os.path.join('checkpoints', checkpoint_filename)    
     # loss_fn = nn.BCEWithLogitsLoss() #  With weights for different classes, pos_weight>1 Increases the precision, < 1 the recall
-    loss_fn = nn.BCELoss()
+    # loss_fn = nn.BCELoss()
     # loss_fn = loss_custom.GeneralizedCELoss()
-    # loss_fn = nn.CrossEntropyLoss()
+    loss_fn = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     trainer = Ecg12LeadImageNetTrainerBinary(model, loss_fn, optimizer, device,optim_by_acc = False)
     fitResult = trainer.fit(dl_train, dl_test, num_epochs, checkpoints=complete_path,
@@ -186,11 +188,11 @@ def RunNet_NY_ClassBinary(classification_category='Left atrial enlargement', dro
 # %% Execution of the main loop
 if __name__ == "__main__":
     print('Start execution')  
-    classification_category='Left ventricular hypertrophy'
+    classification_categories=['Left ventricular hypertrophy','Normal variant']
     # """
     # ['Atrial fibrillation','Left ventricular hypertrophy','Normal variant']
     # """
-    RunNet_NY_ClassBinary(classification_category=classification_category, dropout = 0.26, batch_size = 82, label= 'Exp6_236802_')
+    RunNet_NY_Dual_Head(classification_categories=classification_categories, dropout = 0.26, batch_size = 82, label= 'Exp6_236802_')
     print('Finished execution')
 
 

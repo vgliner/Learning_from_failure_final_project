@@ -315,10 +315,10 @@ class Ecg12ImageNet(nn.Module):
 
         # single score for binary classification, class score for multi-class
         if num_of_classes == 2:
-            layers.append(nn.Linear(in_dim, 1))
+            layers.append(nn.Linear(in_dim, 4))
         else:
-            layers.append(nn.Linear(in_dim, num_of_classes))
-        layers.append(nn.Sigmoid())
+            layers.append(nn.Linear(in_dim, 1))
+            layers.append(nn.Sigmoid())
         self.fc = nn.Sequential(*layers)
 
     def forward(self, x):
