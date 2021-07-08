@@ -7,22 +7,20 @@ import numpy as np
         
 class GeneralizedCELoss(nn.Module):
 
-    def __init__(self, q=0.7):
+    def __init__(self, q=0.7):  #q=0.7
         super(GeneralizedCELoss, self).__init__()
         self.q = q
              
     def forward(self, logits, targets):
-        # p = F.softmax(logits, dim=1)
-        p = logits
+        p = F.softmax(logits, dim=1)
         if np.isnan(p.mean().item()):
             raise NameError('GCE_p')
-        # Yg = torch.gather(p, 1, torch.unsqueeze(targets, 1))
-        Yg =p
+        Yg = torch.gather(p, 1, torch.unsqueeze(targets, 1))
         # modify gradient of cross entropy
         loss_weight = (Yg.squeeze().detach()**self.q)*self.q
         if np.isnan(Yg.mean().item()):
             raise NameError('GCE_Yg')
 
-        loss = F.binary_cross_entropy(logits, targets, reduction='none') * loss_weight
-
-        return loss
+        loss = F.cross_entropy(logits, targets, reduction='none') * loss_weight
+        # loss_new = nn.CrossEntropyLoss(weight=loss_weight)
+        return loss.sum() # loss_new(logits,targets)

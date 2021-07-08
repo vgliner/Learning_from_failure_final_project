@@ -920,6 +920,60 @@ class Ecg12LeadNetTrainerMulticlass(Trainer):
             num_correct = torch.sum(indices==indices1)
         return BatchResult(loss.item(), num_correct.item())
 
+class LfFTrainer(Trainer):
+    def __init__(self,model,loss_fn,optimizer,device,optim_by_acc,biased_model,biased_loss_fn, biased_optimizer):
+        super().__init__(model,loss_fn,optimizer,device,optim_by_acc)
+        self.biased_model = biased_model
+        self.biased_loss_fn = biased_loss_fn
+        self.biased_optimizer = biased_optimizer
+
+    def train_batch(self, batch) -> BatchResult:
+        x, y = batch
+        x = x.to(self.device, dtype=torch.float)
+        y = y.to(self.device, dtype=torch.float)
+        self.optimizer.zero_grad()  
+        # self.biased_optimizer.zero_grad()
+        out = self.model(x)#.flatten()
+        # out_biased = self.biased_model(x)
+        # local_loss = nn.CrossEntropyLoss(reduction='none')
+        # with torch.no_grad():
+        #     out_biased = out
+        #     W = torch.div(local_loss(out_biased,y.type(torch.long)),local_loss(out_biased,y.type(torch.long))+local_loss(out,y.type(torch.long))).detach()
+        # biased_loss = self.biased_loss_fn(out_biased,y.type(torch.long))
+        # biased_loss.backward()
+        # unbiased_loss = nn.CrossEntropyLoss(reduction='none')
+        # loss = unbiased_loss(out, y.type(torch.long))
+        # loss_a = torch.mean(loss*W)
+        # loss_a.backward()
+        # self.biased_optimizer.step()
+        loss = self.loss_fn(out, y.type(torch.long))
+        loss.backward()        
+        self.optimizer.step()
+        out_class = torch.argmax(out,dim=1)
+        num_correct = torch.sum(out_class == y)
+        TP  = torch.tensor([0])
+        TN  = torch.tensor([0])
+        FP  = torch.tensor([0])
+        FN  = torch.tensor([0])
+        return BatchResult(loss.item(), num_correct.item(),TP,TN,FP,FN, out, y)      
+
+
+    def test_batch(self, batch) -> BatchResult:
+        x, y = batch
+        x = x.to(self.device, dtype=torch.float)        
+        y = y.to(self.device, dtype=torch.float)
+        with torch.no_grad():
+            out = self.model(x)#.flatten()
+            loss = self.loss_fn(out, y.type(torch.long))
+            out_class = torch.argmax(out,dim=1)
+            num_correct = torch.sum(out_class == y)   
+            TP  = torch.tensor([0])
+            TN  = torch.tensor([0])
+            FP  = torch.tensor([0])
+            FN  = torch.tensor([0])
+        return BatchResult(loss.item(), num_correct.item(),TP,TN,FP,FN, out, y)   
+
+
 class Ecg12LeadImageNetTrainerBinary(Trainer): #
 
     def train_batch(self, batch) -> BatchResult:

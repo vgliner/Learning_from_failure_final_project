@@ -316,6 +316,7 @@ class Ecg12ImageNet(nn.Module):
         # single score for binary classification, class score for multi-class
         if num_of_classes == 2:
             layers.append(nn.Linear(in_dim, 4))
+            # layers.append(nn.Sigmoid())   # TO DELETE!
         else:
             layers.append(nn.Linear(in_dim, 1))
             layers.append(nn.Sigmoid())
