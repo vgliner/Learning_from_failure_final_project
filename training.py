@@ -928,34 +928,53 @@ class LfFTrainer(Trainer):
         self.biased_optimizer = biased_optimizer
 
     def train_batch(self, batch) -> BatchResult:
+        torch.autograd.set_detect_anomaly(True)
         x, y = batch
         x = x.to(self.device, dtype=torch.float)
         y = y.to(self.device, dtype=torch.float)
+
+        #BIASED
+        x1 = x.detach()
+        y1 = y.detach()        
+        self.biased_optimizer.zero_grad()
+        out_biased = self.biased_model(x1)
+        biased_loss = self.biased_loss_fn(out_biased,y1.type(torch.long))
+        biased_loss.backward()
+        self.biased_optimizer.step()
+        local_loss = nn.CrossEntropyLoss(reduction='none')
+
+
+        # UNBIASED
         self.optimizer.zero_grad()  
-        # self.biased_optimizer.zero_grad()
         out = self.model(x)#.flatten()
-        # out_biased = self.biased_model(x)
-        # local_loss = nn.CrossEntropyLoss(reduction='none')
-        # with torch.no_grad():
-        #     out_biased = out
-        #     W = torch.div(local_loss(out_biased,y.type(torch.long)),local_loss(out_biased,y.type(torch.long))+local_loss(out,y.type(torch.long))).detach()
-        # biased_loss = self.biased_loss_fn(out_biased,y.type(torch.long))
-        # biased_loss.backward()
+
+        with torch.no_grad():
+            out_biased_ = out_biased.detach().clone()
+            W = torch.div(local_loss(out_biased_,y.type(torch.long)),local_loss(out_biased_,y.type(torch.long))+local_loss(out,y.type(torch.long))).detach()
+
+        unbiased_loss = nn.CrossEntropyLoss(reduction='none')
+        loss = unbiased_loss(out, y.type(torch.long))
+        loss_a = torch.mean(loss*W)
+        loss_a.backward()
+        # loss = self.loss_fn(out, y.type(torch.long))
+        # loss.backward()   
+        self.optimizer.step()
+
+
+
+
         # unbiased_loss = nn.CrossEntropyLoss(reduction='none')
         # loss = unbiased_loss(out, y.type(torch.long))
         # loss_a = torch.mean(loss*W)
         # loss_a.backward()
-        # self.biased_optimizer.step()
-        loss = self.loss_fn(out, y.type(torch.long))
-        loss.backward()        
-        self.optimizer.step()
+     
         out_class = torch.argmax(out,dim=1)
         num_correct = torch.sum(out_class == y)
         TP  = torch.tensor([0])
         TN  = torch.tensor([0])
         FP  = torch.tensor([0])
         FN  = torch.tensor([0])
-        return BatchResult(loss.item(), num_correct.item(),TP,TN,FP,FN, out, y)      
+        return BatchResult(loss_a.item(), num_correct.item(),TP,TN,FP,FN, out, y)      
 
 
     def test_batch(self, batch) -> BatchResult:

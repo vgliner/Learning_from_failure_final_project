@@ -208,9 +208,9 @@ def RunLfFNet(classification_categories=['Left atrial enlargement','Normal varia
     ds = NY_database_dataloader.NY_Dataset(classification_category=classification_categories,to_cut_image = True, \
         use_stored_data = False, stored_data_last_entries = 30, dual_class=True)
     # for real training:
-    num_train = int(len(ds)*0.008)  # 0.8
+    num_train = int(len(ds)*0.08)  # 0.8
     num_val = int(len(ds)*0.05)
-    num_test = int((len(ds) - num_train - num_val-1 )*0.001)
+    num_test = int((len(ds) - num_train - num_val-1 )*0.01)
     print(f'Using {num_train} entries for training, {num_val} for validation and {num_test} for test')
 
     batch_size = batch_size
@@ -251,6 +251,12 @@ def RunLfFNet(classification_categories=['Left atrial enlargement','Normal varia
                                  dilation=dilation, batch_norm=batch_norm, num_of_classes=2)#.to(device)
     model = model.to(device)                         
 
+
+    model_biased = models.Ecg12ImageNet(in_channels, hidden_channels, kernel_sizes, in_h, in_w,
+                                 fc_hidden_dims, dropout=dropout, stride=stride,
+                                 dilation=dilation, batch_norm=batch_norm, num_of_classes=2)#.to(device)
+    model_biased = model.to(device)         
+
     # %% Test the dimentionality
     x_try = x.to(device, dtype=torch.float)
     y_pred = model(x_try)
@@ -276,7 +282,8 @@ def RunLfFNet(classification_categories=['Left atrial enlargement','Normal varia
     loss_fn = nn.CrossEntropyLoss()
     biased_loss_fn = loss_custom.GeneralizedCELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    trainer = LfFTrainer(model, loss_fn, optimizer, device,optim_by_acc = False, biased_model = model,biased_loss_fn=biased_loss_fn, biased_optimizer=optimizer)
+    optimizer_biased = optim.Adam(model_biased.parameters(), lr=lr)
+    trainer = LfFTrainer(model, loss_fn, optimizer, device,optim_by_acc = False, biased_model = model_biased,biased_loss_fn=biased_loss_fn, biased_optimizer=optimizer_biased)
     fitResult = trainer.fit(dl_train, dl_test, num_epochs, checkpoints=complete_path,
                                 early_stopping=100, print_every=1)
 
