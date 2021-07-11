@@ -7,7 +7,7 @@ import numpy as np
         
 class GeneralizedCELoss(nn.Module):
 
-    def __init__(self, q=0.7):  #q=0.7
+    def __init__(self, q=0.8):  #q=0.7
         super(GeneralizedCELoss, self).__init__()
         self.q = q
              

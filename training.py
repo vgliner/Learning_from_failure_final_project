@@ -921,11 +921,12 @@ class Ecg12LeadNetTrainerMulticlass(Trainer):
         return BatchResult(loss.item(), num_correct.item())
 
 class LfFTrainer(Trainer):
-    def __init__(self,model,loss_fn,optimizer,device,optim_by_acc,biased_model,biased_loss_fn, biased_optimizer):
+    def __init__(self,model,loss_fn,optimizer,device,optim_by_acc,biased_model,biased_loss_fn, biased_optimizer,train_vanilla=False):
         super().__init__(model,loss_fn,optimizer,device,optim_by_acc)
         self.biased_model = biased_model
         self.biased_loss_fn = biased_loss_fn
         self.biased_optimizer = biased_optimizer
+        self.train_vanilla = train_vanilla
 
     def train_batch(self, batch) -> BatchResult:
         torch.autograd.set_detect_anomaly(True)
@@ -941,20 +942,24 @@ class LfFTrainer(Trainer):
         biased_loss = self.biased_loss_fn(out_biased,y1.type(torch.long))
         biased_loss.backward()
         self.biased_optimizer.step()
-        local_loss = nn.CrossEntropyLoss(reduction='none')
 
 
         # UNBIASED
+        unbiased_loss = nn.CrossEntropyLoss(reduction='none')
         self.optimizer.zero_grad()  
         out = self.model(x)#.flatten()
 
         with torch.no_grad():
             out_biased_ = out_biased.detach().clone()
-            W = torch.div(local_loss(out_biased_,y.type(torch.long)),local_loss(out_biased_,y.type(torch.long))+local_loss(out,y.type(torch.long))).detach()
-
-        unbiased_loss = nn.CrossEntropyLoss(reduction='none')
+            Divisor = unbiased_loss(out_biased_,y.type(torch.long))+unbiased_loss(out,y.type(torch.long))
+            zero_indxs = (Divisor == 0).nonzero()
+            Divisor[zero_indxs]+=1.0
+            W = torch.div(unbiased_loss(out_biased_,y.type(torch.long)),Divisor).clone().detach()
         loss = unbiased_loss(out, y.type(torch.long))
-        loss_a = torch.mean(loss*W)
+        if self.train_vanilla == False:
+            loss_a = torch.mean(loss*W)
+        else:
+            loss_a = torch.mean(loss)
         loss_a.backward()
         # loss = self.loss_fn(out, y.type(torch.long))
         # loss.backward()   
